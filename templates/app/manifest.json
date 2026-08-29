@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "__PUBLISHER__.__SLUG__",
+  "name": "__NAME__",
+  "summary": "One line about what this app does.",
+  "version": "0.1.0",
+  "publisher": "__PUBLISHER__",
+  "icon": "▣",
+  "requires": { "platform": "__PLATFORM_RANGE__" },
+
+  "runtime": { "type": "hosted" },
+
+  "surfaces": [
+    { "id": "main", "kind": "dashboard", "title": "__NAME__", "path": "/index.html" }
+  ],
+
+  "permissions": [],
+
+  "data": {
+    "namespace": "__NAMESPACE__",
+    "delete_on_uninstall": false,
+    "tables": {
+      "items": {
+        "columns": {
+          "title": { "type": "text", "required": true },
+          "done": { "type": "boolean", "default": false }
+        },
+        "indexes": [["done"]]
+      }
+    }
+  },
+
+  "pricing": { "model": "free" }
+}

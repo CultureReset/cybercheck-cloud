@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "id": "fixture.song-request",
+  "name": "Song Request",
+  "summary": "Guests request a song from the public page; staff work the queue.",
+  "description": "A public request form and an owner-facing queue. Requesters become contacts, and every request is announced so other apps can react to it.",
+  "version": "1.0.0",
+  "publisher": "fixture",
+  "icon": "\ud83c\udfb5",
+  "categories": [
+    "customer",
+    "engagement"
+  ],
+  "requires": {
+    "platform": "^1"
+  },
+  "runtime": {
+    "type": "hosted"
+  },
+  "surfaces": [
+    {
+      "id": "request_form",
+      "kind": "public",
+      "title": "Request a song",
+      "path": "/public/index.html",
+      "display_modes": [
+        "inline",
+        "card",
+        "modal"
+      ],
+      "requires_permission": "surface.public"
+    },
+    {
+      "id": "queue",
+      "kind": "dashboard",
+      "title": "Request queue",
+      "path": "/dashboard/index.html",
+      "display_modes": [
+        "page"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "id": "surface.public",
+      "reason": "Show the request form on your public page."
+    },
+    {
+      "id": "contacts.write",
+      "reason": "Save the requester so you can reach them if the song plays.",
+      "optional": true
+    },
+    {
+      "id": "events.emit",
+      "reason": "Announce new requests so your other apps can react."
+    },
+    {
+      "id": "capability.invoke",
+      "reason": "Send a confirmation through whichever messaging app you have installed.",
+      "optional": true
+    }
+  ],
+  "events": {
+    "emits": [
+      "song_request.created"
+    ]
+  },
+  "data": {
+    "namespace": "song_request",
+    "delete_on_uninstall": false,
+    "tables": {
+      "requests": {
+        "columns": {
+          "song": {
+            "type": "text",
+            "required": true
+          },
+          "requested_by": {
+            "type": "text"
+          },
+          "contact": {
+            "type": "text"
+          },
+          "status": {
+            "type": "text",
+            "default": "pending"
+          }
+        },
+        "public": "append",
+        "indexes": [
+          [
+            "status"
+          ]
+        ]
+      }
+    }
+  },
+  "pricing": {
+    "model": "free"
+  }
+}

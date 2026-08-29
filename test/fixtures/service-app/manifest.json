@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "id": "fixture.notifier",
+  "name": "Notifier",
+  "summary": "Sends messages on behalf of any app that asks, and keeps a log.",
+  "description": "A headless app. It provides the notify.send capability, so any other installed app can send a message without knowing how messages get sent here, and it listens for song requests so it can acknowledge them.",
+  "version": "1.0.0",
+  "publisher": "fixture",
+  "icon": "\u2709\ufe0f",
+  "categories": [
+    "operations"
+  ],
+  "requires": {
+    "platform": "^1"
+  },
+  "runtime": {
+    "type": "service",
+    "health_path": "/health"
+  },
+  "permissions": [
+    {
+      "id": "contacts.read",
+      "reason": "Look up the address to send a message to."
+    },
+    {
+      "id": "events.subscribe",
+      "reason": "React when another app announces something happened."
+    }
+  ],
+  "capabilities": {
+    "provides": [
+      {
+        "id": "notify.send",
+        "summary": "Send a message to a contact.",
+        "path": "/capabilities/notify.send"
+      }
+    ]
+  },
+  "events": {
+    "subscribes": [
+      {
+        "event": "song_request.created",
+        "path": "/events/song-request"
+      }
+    ]
+  },
+  "data": {
+    "namespace": "notifier",
+    "delete_on_uninstall": false,
+    "tables": {
+      "messages": {
+        "columns": {
+          "to": {
+            "type": "text",
+            "required": true
+          },
+          "body": {
+            "type": "text",
+            "required": true
+          },
+          "reason": {
+            "type": "text"
+          }
+        },
+        "indexes": [
+          [
+            "to"
+          ]
+        ]
+      }
+    }
+  },
+  "pricing": {
+    "model": "free"
+  }
+}

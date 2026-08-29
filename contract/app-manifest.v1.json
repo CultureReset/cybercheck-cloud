@@ -1,0 +1,525 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cybercheck.dev/contract/app-manifest.v1.json",
+  "title": "CyberCheck App Manifest v1",
+  "description": "Everything an app declares about itself. The platform never reads app source code; it reads this.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "version",
+    "publisher",
+    "runtime"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "description": "Globally unique, publisher-prefixed. Never changes for the life of the app.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$",
+      "maxLength": 96
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "version": {
+      "description": "Semver. A published version is immutable.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "publisher": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 48
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "icon": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "categories": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "requires": {
+      "description": "Compatibility gate. An app targeting a platform major it does not get is not installable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "pattern": "^\\^?\\d+(\\.\\d+)?(\\.\\d+)?$"
+        },
+        "apps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$"
+          }
+        }
+      }
+    },
+    "runtime": {
+      "description": "How the app's code actually runs. The platform never imports app code into its own page.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "url"
+          ],
+          "properties": {
+            "type": {
+              "const": "hosted"
+            },
+            "url": {
+              "description": "Origin the app is served from. Surfaces are iframed from here, so it must not be a platform origin.",
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https?://"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "base_url"
+          ],
+          "properties": {
+            "type": {
+              "const": "service"
+            },
+            "base_url": {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https?://"
+            },
+            "health_path": {
+              "type": "string",
+              "default": "/health"
+            }
+          }
+        }
+      ]
+    },
+    "surfaces": {
+      "description": "Where the app is allowed to appear. The owner chooses which of these are actually enabled.",
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "path"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "maxLength": 48
+          },
+          "kind": {
+            "enum": [
+              "dashboard",
+              "settings",
+              "public",
+              "widget",
+              "standalone"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "path": {
+            "description": "Resolved against runtime.url. Must be relative \u2014 an absolute URL would escape the app's own origin.",
+            "type": "string",
+            "pattern": "^/[^\\s]*$",
+            "maxLength": 512
+          },
+          "display_modes": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "inline",
+                "card",
+                "compact",
+                "modal",
+                "page",
+                "full"
+              ]
+            }
+          },
+          "requires_permission": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "description": "Platform data and actions the app asks for. The owner grants these one by one at install.",
+      "type": "array",
+      "maxItems": 48,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+            "maxLength": 96
+          },
+          "reason": {
+            "description": "Shown to the owner on the consent screen. A permission with no honest reason does not get granted.",
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200
+          },
+          "optional": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "description": "Named contracts other apps may call. This is how apps compose without importing each other.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^/[^\\s]*$"
+              }
+            }
+          }
+        },
+        "consumes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+          }
+        }
+      }
+    },
+    "data": {
+      "description": "Tables the platform provisions for this app, in a namespace only this app can reach.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace"
+      ],
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 40
+        },
+        "delete_on_uninstall": {
+          "description": "Default false. Uninstalling removes the app, not the owner's records.",
+          "type": "boolean",
+          "default": false
+        },
+        "tables": {
+          "type": "object",
+          "maxProperties": 24,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 40
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "columns"
+            ],
+            "properties": {
+              "columns": {
+                "type": "object",
+                "minProperties": 1,
+                "maxProperties": 40,
+                "propertyNames": {
+                  "pattern": "^[a-z][a-z0-9_]*$",
+                  "maxLength": 40
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "text",
+                        "integer",
+                        "number",
+                        "money",
+                        "boolean",
+                        "date",
+                        "timestamp",
+                        "json",
+                        "uuid"
+                      ]
+                    },
+                    "required": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "default": {},
+                    "max_length": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10000
+                    }
+                  }
+                }
+              },
+              "public": {
+                "description": "What an anonymous visitor on a public surface may do with this table. Default none: a public form that writes to a table has to say so.",
+                "enum": [
+                  "none",
+                  "append",
+                  "read",
+                  "read-append"
+                ],
+                "default": "none"
+              },
+              "indexes": {
+                "type": "array",
+                "maxItems": 6,
+                "items": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "emits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+          }
+        },
+        "subscribes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "event",
+              "path"
+            ],
+            "properties": {
+              "event": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^/[^\\s]*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "description": "Settings the owner fills in. The platform renders the form; the app reads the values.",
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "label",
+          "type"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 40
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "type": {
+            "enum": [
+              "text",
+              "number",
+              "boolean",
+              "select",
+              "secret",
+              "url"
+            ]
+          },
+          "required": {
+            "type": "boolean",
+            "default": false
+          },
+          "default": {},
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "help": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model"
+      ],
+      "properties": {
+        "model": {
+          "enum": [
+            "free",
+            "flat",
+            "usage"
+          ]
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "interval": {
+          "enum": [
+            "month",
+            "year"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "model": {
+                "const": "free"
+              }
+            },
+            "required": [
+              "model"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "amount"
+                  ]
+                },
+                {
+                  "required": [
+                    "currency"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": {
+                "enum": [
+                  "flat",
+                  "usage"
+                ]
+              }
+            },
+            "required": [
+              "model"
+            ]
+          },
+          "then": {
+            "required": [
+              "amount",
+              "currency"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

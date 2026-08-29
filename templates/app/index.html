@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__NAME__</title>
+<style>
+  body { font: 15px/1.55 system-ui, sans-serif; margin: 0; padding: 18px; color-scheme: light dark; }
+  form { display: flex; gap: 8px; margin-bottom: 16px; }
+  input { flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 9px; font: inherit; }
+  button { padding: 10px 16px; border: 0; border-radius: 9px; background: #1d4ed8; color: #fff; font: inherit; font-weight: 600; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid #8883; }
+  li.done span { text-decoration: line-through; opacity: .5; }
+  li button { background: none; color: inherit; border: 1px solid #8886; margin-left: auto; padding: 5px 11px; font-weight: 400; }
+</style>
+
+<form id="add">
+  <input name="title" placeholder="Add an item" required maxlength="200">
+  <button type="submit">Add</button>
+</form>
+<ul id="list"></ul>
+
+<script type="module">
+  // The platform tells the frame where it lives, so this app hard-codes no
+  // address and runs unchanged against local, staging and production.
+  const platform = new URLSearchParams(location.search).get('cc_platform');
+  const { connect } = await import(`${platform}/sdk/app.js`);
+  const cc = await connect();
+
+  const items = cc.table('items');
+  const list = document.getElementById('list');
+
+  async function draw() {
+    list.replaceChildren(...(await items.list({ order: 'created_at desc' })).map(row => {
+      const li = document.createElement('li');
+      li.className = row.done ? 'done' : '';
+      const label = document.createElement('span');
+      label.textContent = row.title;
+      const toggle = document.createElement('button');
+      toggle.textContent = row.done ? 'Undo' : 'Done';
+      toggle.onclick = async () => { await items.update(row.id, { done: !row.done }); draw(); };
+      li.append(label, toggle);
+      return li;
+    }));
+    cc.resize();
+  }
+
+  document.getElementById('add').onsubmit = async event => {
+    event.preventDefault();
+    const form = event.target;
+    await items.create({ title: form.title.value });
+    form.reset();
+    draw();
+  };
+
+  draw();
+</script>
