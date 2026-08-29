@@ -38,6 +38,14 @@ export const config = {
     name: process.env.DEFAULT_STORE_NAME ?? 'Official Store',
   },
 
+  // Origins allowed to call the user-facing API from a browser — the
+  // dashboards embedding this platform. Empty means same-origin only, which is
+  // the safe default for a deployment that has not said otherwise.
+  get dashboardOrigins() {
+    return (process.env.DASHBOARD_ORIGINS ?? '')
+      .split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean);
+  },
+
   sessionTtlSeconds: number(process.env.SESSION_TTL_SECONDS, 60 * 60 * 24 * 30),
   accessTokenTtlSeconds: number(process.env.ACCESS_TOKEN_TTL_SECONDS, 900),
   handoffCodeTtlSeconds: number(process.env.HANDOFF_CODE_TTL_SECONDS, 60),

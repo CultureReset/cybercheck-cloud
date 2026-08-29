@@ -16,6 +16,28 @@ That is the whole path. Install it from the store like any other app.
 
 ---
 
+## It has no pages
+
+The platform answers; it does not draw. There is no store website here, no
+customer page and no stylesheet — those live in the dashboard that embeds it,
+which for this stack is `cybercheck-web`. A store that ships its own site is a
+second place for a customer to log in and a second thing to restyle.
+
+What it serves is an API and two client libraries:
+
+    /v1/…            the API
+    /sdk/app.js      loaded by an app, inside its iframe
+    /sdk/host.js     loaded by the dashboard, to mount that iframe
+
+`host.js` is imported by the host at runtime rather than vendored, because it
+carries the origin check the whole security model rests on and that check must
+have one implementation. It takes a `handoff` function from the host, so
+sessions and tokens stay on the host's side of the line.
+
+A dashboard on another origin calls the API with a bearer token, never a
+cookie. Set `DASHBOARD_ORIGINS` to the origins allowed to do it; anything else
+gets no CORS headers at all rather than a partial set that half works.
+
 ## Running the platform
 
 ```bash
@@ -141,8 +163,7 @@ being told what to pin to.
     db/          four migrations; every boundary above is a constraint here
     contract/    the app manifest schema (vendored from cybercheck-marketplace)
     src/         catalog, installs, tokens, identity, appdata, events, capabilities
-    sdk/         app.js (loaded by apps) and host.js (loaded by the store)
-    ui/          the store, and the customer-facing page
+    sdk/         app.js (loaded by apps) and host.js (loaded by a dashboard)
     bin/         cc — the developer CLI — plus migrate and contract sync
     templates/   what `cc init` writes
     test/        53 end-to-end cases, with fixtures — not apps
