@@ -25,6 +25,23 @@ That is the whole path. Install it from the store like any other app.
 
 ---
 
+<!-- branches:start -->
+## Branches
+
+*Read from GitHub on 2026-09-29. 3 branches.*
+
+- **Default branch on GitHub:** `claude/modular-web-app-store-32zh3e`.
+- **`claude/repo-code-analysis-y4n1k7`** is where this README and the audit fixes live. It contains every commit on `claude/modular-web-app-store-32zh3e` and more (this README, the audit fixes and the screenshots).
+- Every other branch is already contained in `claude/repo-code-analysis-y4n1k7`; nothing is only on another branch.
+
+| Branch | Last commit | Not in the work branch | Last commit message |
+| --- | --- | --- | --- |
+| `claude/repo-code-analysis-y4n1k7` (work branch) | 2026-09-29 | - | this README and the audit fixes |
+| `claude/modular-web-app-store-32zh3e` (default) | 2026-08-29 | 0 | refactor: The platform has no pages |
+| `main` | 2026-08-29 | 0 | refactor: The platform has no pages |
+
+<!-- branches:end -->
+
 ## It has no pages
 
 The platform answers; it does not draw. There is no store website here, no
