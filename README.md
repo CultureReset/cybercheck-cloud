@@ -51,7 +51,7 @@ gets no CORS headers at all rather than a partial set that half works.
 
 ```bash
 createdb cybercheck_platform
-cp .env.example .env                     # every knob is in here, none in the source
+cp .env.example .env                     # the main knobs; defaults live in src/config.js
 DATABASE_URL=postgres://localhost/cybercheck_platform npm run migrate
 npm start
 ```
@@ -79,6 +79,7 @@ test that publishes one app at two different origins to prove it.
 | | |
 |---|---|
 | `cc init <dir>` | scaffold, anywhere |
+| `cc login` | sign in to a platform once (needed by `dev`, `publish`, `apps`) |
 | `cc dev [--port N]` | serve and publish live |
 | `cc publish --url <url>` | publish at a real address |
 | `cc validate` | check a manifest, no account needed |
@@ -96,9 +97,11 @@ account to read a contract is a reason not to build on a platform.
 | **Which workspace?** | membership, checked against the URL — never taken from it |
 | **May they do this?** | a permission the owner granted by name, read live |
 
-Three separate middlewares in `src/http/auth.js`. A credential for one is never
-accepted by another: a platform session cannot call an app route and an app
-token cannot call a user route, and there is a test for both.
+Four middlewares in `src/http/auth.js`: `requireUser` and `requireApp` answer
+the first question, `requireWorkspaceRole` the second, `requireScope` the third.
+A credential for one is never accepted by another: a platform session cannot
+call an app route (there is a test for that) and an app token is not looked up
+as a session, so it cannot call a user route (no test covers that direction).
 
 ## The four states people confuse
 
@@ -122,8 +125,10 @@ app's token. So a surface is an iframe on the app's **own origin**, and
   manifest pinned — one line, and the whole model rests on it;
 - a surface that throws, hangs or 404s becomes a small "unavailable" card while
   the rest of the page keeps working;
-- the handoff code in the frame URL is single-use, short-lived, and redeemable
-  only from that pinned origin, so a leaked one buys nothing.
+- the handoff code in the frame URL is single-use, short-lived, and bound to
+  that pinned origin. The binding is checked against the request's `Origin`
+  header, so it stops a leaked code in a browser; a request that sends no
+  `Origin` header is not rejected by that check (`src/oauth.js`).
 
 ## What an app may do
 
@@ -131,13 +136,16 @@ app's token. So a surface is an iframe on the app's **own origin**, and
 |---|---|
 | Read and write its **own** tables | nothing — they are its tables |
 | Read the workspace profile, its members | `workspace.profile.read`, `workspace.members.read` |
-| Read and write **shared contacts** | `contacts.read`, `contacts.write` |
+| Read and write **shared contacts** | `contacts.read`, `contacts.write` (deleting needs `contacts.delete`) |
 | Announce an event | `events.emit`, and the event must be in its manifest |
+| Receive an event | `events.subscribe` |
 | Call another app's capability | `capability.invoke` |
 | Appear on the customer-facing page | `surface.public` |
 
 Grants are read from the table on **every** request, not from the token: a
 permission revoked thirty seconds ago stops working now, not in fifteen minutes.
+The exception is an anonymous public-surface token, which keeps the narrowed
+scope it was minted with (`src/http/auth.js`).
 
 Shared contacts are the reason to install a second app — one writes a contact,
 another reads it, and neither knows the other exists. Capabilities are the same
@@ -160,9 +168,11 @@ cannot read everyone else's back.
 
 ## Configuration
 
-`src/config.js` is the only file that reads `process.env`, and nothing it
-provides is restated as a literal anywhere else — port, database, the platform's
-own address, store name, three token lifetimes, two timeouts. The platform's own
+`src/config.js` is where the platform reads its environment — port, database,
+the platform's own address, store name, dashboard origins, three token
+lifetimes, an app-call timeout and an event-delivery interval. A few things sit
+outside it: `src/db.js` reads `DATABASE_URL` itself, `src/http/routes/auth.js`
+reads `NODE_ENV`, and the CLI reads `CC_PLATFORM` and `XDG_CONFIG_HOME`. The platform's own
 version comes from `package.json`, which is what an app's `requires.platform`
 range is checked against and what `/health` reports so tooling can pin without
 being told what to pin to.
@@ -192,8 +202,12 @@ and a suite that passed against it would be agreeing with itself.
 ## The contract
 
 `contract/app-manifest.v1.json` is a copy. The canonical schema lives in
-`cybercheck-marketplace`, because the catalog decides what an app may declare.
-`npm run sync:contract` copies it and the suite fails if the two have drifted.
+`cybercheck-marketplace`, because the catalog decides what an app may declare;
+today it is on that repo's `claude/modular-web-app-store-32zh3e` branch, and the
+`cybercheck-main` and `claude/repo-code-analysis-y4n1k7` branches have no
+`contract/` directory. `npm run sync:contract` copies it, and the suite fails if
+the two have drifted, but only when a sibling `../cybercheck-marketplace/contract/`
+(or `MARKETPLACE_CONTRACT`) exists; otherwise that check passes without comparing.
 
 Validation is two layers on purpose. The JSON Schema decides shape. `validate`
 in `src/manifest.js` decides what the schema cannot know: that a permission
