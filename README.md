@@ -1,3 +1,12 @@
+> **Status: an earlier attempt, not part of Ghost.** A standalone "modular app
+> store" (an app is a manifest and a URL, one login, many apps) with its own
+> Postgres schema and `cc` command-line tool. It is not deployed. The Store that
+> Ghost uses now lives in `gcr-api-clean` (`store_*` tables) and is managed from
+> `Admin-dashboard-main`; it reuses this family's app-manifest v1 shape. Its tests
+> need a Postgres `DATABASE_URL` (`npm test`).
+
+---
+
 # CyberCheck Platform
 
 A standalone, modular app store. One login, many apps.
