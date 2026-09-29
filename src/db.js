@@ -15,7 +15,7 @@ export const MIGRATIONS_DIR = path.join(HERE, '..', 'db');
 let pool = null;
 
 export async function connect({ url = process.env.DATABASE_URL, migrate: shouldMigrate = true } = {}) {
-  if (!url) throw new Error('DATABASE_URL is not set. See platform/README.md.');
+  if (!url) throw new Error('DATABASE_URL is not set. See README.md.');
   pool = new pg.Pool({ connectionString: url, max: 10 });
   await pool.query('select 1');
   if (shouldMigrate) await migrate();
